@@ -1,0 +1,15 @@
+{
+  "mission": "Inbox Review",
+  "version": 1,
+  "status": "completed",
+  "startedAt": "",
+  "completedAt": "",
+  "lastRun": "",
+  "nextRun": "",
+  "lastProcessedEmailTime": "",
+  "lastProcessedHistoryId": "",
+  "lastArtifact": "",
+  "statistics": {},
+  "retryCount": 0,
+  "lastError": null
+}
