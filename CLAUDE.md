@@ -49,11 +49,13 @@ Khi được giao một Mission:
 
 Không lưu trạng thái.
 
-Ví dụ:
+Ví dụ:   
 
 Meeting Note
 
 Financial Analysis
+
+Báo giá (Quotation)
 
 ...
 

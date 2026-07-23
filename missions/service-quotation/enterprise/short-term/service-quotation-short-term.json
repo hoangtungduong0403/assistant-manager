@@ -1,0 +1,124 @@
+[
+    {
+        "type": "THỰC HIỆN CÔNG VIỆC TẠI PHÒNG ĐĂNG KÝ KINH DOANH SỞ TÀI CHÍNH",
+        "estTime": "Từ 07-15 ngày làm việc",
+        "procedures": [
+            {
+                "name": "THỦ TỤC THÀNH LẬP DOANH NGHIỆP",
+                "detail": [
+                    {
+                        "service": "Công ty, Chi nhánh, VPDD, ĐĐKD",
+                        "fee": 1500000,
+                        "note": "Hỗ trợ giải trình nếu có"
+                    }
+                ]
+            },
+            {
+                "name": "THỦ TỤC THAY ĐỔI THÔNG TIN DOANH NGHIỆP",
+                "detail": [
+                    {
+                        "service": "Thay đổi thông tin Công ty, Chi nhánh, Văn phòng đại diện",
+                        "fee": 1500000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Chuyển nhượng vốn góp Công ty TNHH",
+                        "fee": 2000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Chuyển nhượng vốn góp Công ty Cổ phần",
+                        "fee": 4000000,
+                        "note": ""
+                    }
+                ]
+            },
+            {
+                "name": "THỦ TỤC ĐÓNG MÃ SỐ DOANH NGHIỆP",
+                "detail": [
+                    {
+                        "service": "Công ty, Chi nhánh độc lập",
+                        "fee": 3000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Chi nhánh phụ thuộc, Văn phòng đại diện",
+                        "fee": 2000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Địa điểm kinh doanh",
+                        "fee": 1500000,
+                        "note": ""
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "THỰC HIỆN CÔNG VIỆC TẠI CƠ QUAN THUẾ",
+        "estTime": "Từ 07-15 ngày làm việc",
+        "procedures": [
+            {
+                "name": "THỦ TỤC THÀNH LẬP DOANH NGHIỆP",
+                "detail": [
+                    {
+                        "service": "Đăng ký loại hình kê khai",
+                        "fee": 1000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Xác minh địa điểm đăng ký kinh doanh",
+                        "fee": 1500000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Thủ tục phát hành hóa đơn điện tử",
+                        "fee": 2000000,
+                        "note": ""
+                    }
+                ]
+            },
+            {
+                "name": "THỦ TỤC THAY ĐỔI THÔNG TIN DOANH NGHIỆP",
+                "detail": [
+                    {
+                        "service": "Thay đổi thông tin Công ty, Chi nhánh, Văn phòng đại diện",
+                        "fee": 1500000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Chuyển nhượng vốn góp Công ty TNHH",
+                        "fee": 2000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Chuyển nhượng vốn góp Công ty Cổ phần",
+                        "fee": 4000000,
+                        "note": ""
+                    }
+                ]
+            },
+            {
+                "name": "THỦ TỤC ĐÓNG MÃ SỐ DOANH NGHIỆP",
+                "detail": [
+                    {
+                        "service": "Công ty, Chi nhánh độc lập",
+                        "fee": 3000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Chi nhánh phụ thuộc, Văn phòng đại diện",
+                        "fee": 2000000,
+                        "note": ""
+                    },
+                    {
+                        "service": "Địa điểm kinh doanh",
+                        "fee": 1500000,
+                        "note": ""
+                    }
+                ]
+            }
+        ]
+    }
+]
