@@ -3,7 +3,7 @@
 ## File thực tế đang dùng
 
 - Client Information: `SGA_Client_information.xlsx` — sheet `Information`
-- Summary Quotation: `SGA_Summary_Quotation_2025.xlsx` — workbook nhiều sheet, không phải 1 bảng đơn
+- Summary Quotation: `SGA_Summary Quotation_2025.xlsx` — workbook nhiều sheet, không phải 1 bảng đơn
 
 ## Cấu trúc thật của Summary Quotation
 
