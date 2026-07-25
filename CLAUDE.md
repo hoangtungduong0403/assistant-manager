@@ -59,7 +59,8 @@ Báo giá (Quotation)
 
 Revenue Notification Message
 
-Debt Report
+Đánh giá công nợ (Debt Evaluation)
+
 ...
 
 ---
