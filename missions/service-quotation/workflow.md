@@ -41,16 +41,28 @@ Xác định với mỗi khách hàng:
 - `MÃ CÔNG TY` (cột B) — khóa nối.
 - `MÃ SỐ THUẾ` (cột E).
 - `LOẠI` (cột N) — "Long-term 1/2" hoặc "Short-term".
-- Cấp độ gói dịch vụ theo từng loại dịch vụ (cột O/P/Q: Dịch vụ phân tích - thống kê / Dịch vụ nhân sự / Dịch vụ pháp chế doanh nghiệp).
+- `Dịch vụ phân tích thống kê` (cột O) - Thuộc Long Term - bao gồm các lựa chọn: "Standard" hoặc "Premium" hoặc "Platinum", tương ứng với các gói. Chỉ dùng với mục đích để xác định gói mà doanh nghiệp đã chọn
+- `Dịch vụ nhân sự` (cột P) - Thuộc Short Term, bao gồm các lựa chọn: "Standard" hoặc "Premium" hoặc "Platinum", tương ứng với các gói. Chỉ dùng với mục đích để xác định gói mà doanh nghiệp đã chọn
+- `Dịch vụ pháp chế doanh nghiệp` (cột Q) - Thuộc Short Term, bao gồm các lựa chọn: "Standard" hoặc "Premium" hoặc "Platinum", tương ứng với các gói. Chỉ dùng với mục đích để xác định gói mà doanh nghiệp đã chọn
 
+## Giải thích các lựa chọn ở cột N, O, P, Q:
+- Công ty SGA cung cấp rất nhiều dịch vụ, mỗi loại dịch vụ sẽ thuộc Long term hoặc Short term, mỗi loại dịch vụ sẽ có thêm các lựa chọn "Standard" hoặc "Premium" hoặc "Platinum" để phân loại các tính năng có được cung cấp, tùy chọn vào gói Standard, Premium, Platinum
+- Khách hàng có thể mua cả các gói long-term lẫn short term cùng 1 thời điểm.
+
+## Quy tắc phân loại dịch vụ được chọn
+- "Dịch vụ phân tích thống kê" có giá trị, nghĩa là có sử dụng dịch vụ long-term
+- "Dịch vụ nhân sự" hoặc "Dịch vụ pháp chế doanh nghiệp" có giá trị, có nghĩa là khách hàng có sử dụng Short term
+- "Dịch vụ phân tích thống kê" và "Dịch vụ nhân sự" hoặc "Dịch vụ pháp chế doanh nghiệp"
+- Nếu Loại là Short term, và "Dịch vụ nhân sự" hoặc "Dịch vụ pháp chế doanh nghiệp" không có giá trị, nghĩa là khách hàng chỉ sử dụng dịch vụ Short-term
+- Nếu Loại là Long term, và "Dịch vụ phân tích thống kê" có giá trị, nghĩa là khách hàng chỉ sử dụng dịch vụ Short-term
 ## Bước 2
 
 Đọc file Summary Quotation gốc tại `missions/service-quotation/templates/SGA_Summary Quotation_2025.xlsx` (xem mục "Vị trí Template" ở trên).
 
 Xác định:
 
-- Sheet đích theo `LOẠI` (`DATA LONG - TERM` hoặc `DATA SHORT - TERM`).
-- Khách hàng đã tồn tại sẵn trong sheet hay chưa (so khớp theo `MÃ CÔNG TY`, không phân biệt hoa/thường) — nếu đã có, bỏ qua, không tạo dòng trùng.
+- Sheet đích tùy thuộc vào lựa chọn mà file client-information cung cấp.
+- AI cần xác định Khách hàng có dùng Long-term, Short-term hay ko, nếu chỉ có 1 trong 2 thì chỉ cần thêm ở sheet đích Long hoặc Short term tab , nếu có cả 2, thì cần thêm vào ở cả 2.
 - Khách hàng có `LOẠI` trống hoặc không nhận diện được ("Long-term"/"Short-term") — liệt kê riêng để người dùng xác nhận thủ công, không tự đoán.
 
 ## Bước 3

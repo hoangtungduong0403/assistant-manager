@@ -1,10 +1,12 @@
 # Quy tắc làm việc
 
 > **Cập nhật 2026-07-24:** Mission không còn sinh Single Quotation riêng theo từng khách hàng. Chỉ sinh/cập nhật Summary Quotation. Các quy tắc liên quan đến Single Quotation bên dưới đã được loại bỏ; xem "Lịch sử thay đổi" ở cuối file.
+>
+> **Cập nhật 2026-07-25:** Căn cứ phân loại Long-term/Short-term đổi sang dựa vào cột O/P/Q (xem `mapping.md`, `workflow.md`). Vì vậy quy tắc "mỗi dòng Client Information tương ứng đúng 1 dòng mới" bên dưới đã được sửa lại để cho phép ngoại lệ khi khách hàng dùng cả 2 loại dịch vụ.
 
 Luôn sử dụng dữ liệu từ file Client Information do người dùng cung cấp. Không tự suy diễn hoặc tự bổ sung thông tin khách hàng không có trong dữ liệu nguồn.
 
-Mỗi dòng trong Client Information tương ứng đúng 1 dòng mới trong Summary Quotation — không gộp, không bỏ sót, không tạo thêm khách hàng không có trong dữ liệu nguồn.
+Mỗi khách hàng trong Client Information tương ứng với **1 dòng mới trong mỗi sheet mà khách hàng đó cần** (Long-term và/hoặc Short-term, xác định theo bảng quy tắc phân loại tại `mapping.md`). Với đa số khách hàng (chỉ dùng 1 loại dịch vụ) đây vẫn là đúng 1 dòng; **ngoại lệ**: khách hàng dùng cả dịch vụ Long-term (O có giá trị) lẫn Short-term (P hoặc Q có giá trị) sẽ tạo ra **2 dòng** — 1 dòng ở mỗi sheet. Không gộp 2 dịch vụ của cùng khách hàng vào chung 1 dòng, không bỏ sót khách hàng, không tạo thêm khách hàng không có trong dữ liệu nguồn.
 
 Không tự ý thay đổi cấu trúc cột của Summary Quotation (không thêm/xoá/đổi tên cột).
 
@@ -26,6 +28,8 @@ Khi thêm dòng mới, luôn copy style (font, fill, border, number format) từ
 
 Không tự sửa các công thức đã tồn tại sẵn trong template, kể cả khi công thức đó đang lỗi (xem ghi chú trong `mapping.md` về cột K của `DATA SHORT - TERM`) — chỉ ghi chú lại trong báo cáo kết quả để người dùng biết.
 
+Phân loại Long-term / Short-term cho từng khách hàng thực hiện theo bảng quy tắc tại `mapping.md` (căn cứ chính là cột O/P/Q, `LOẠI` chỉ là fallback khi O/P/Q đều rỗng). Không tự đoán phân loại khi cả O, P, Q và `LOẠI` đều không xác định được — liệt kê riêng khách hàng đó để người dùng xác nhận thủ công.
+
 ## Quy ước đặt tên Artifact
 
 ### Summary Quotation
@@ -45,9 +49,15 @@ Ví dụ:
 
 ## Công cụ hỗ trợ
 
-Script `missions/service-quotation/scripts/update_summary_quotation.py` tự động hóa việc đọc Client Information, mapping, chống trùng khách hàng, và sinh Artifact Summary Quotation mới theo đúng các quy tắc trên. Xem chi tiết cách dùng trong `workflow.md`.
+Script `missions/service-quotation/scripts/update_summary_quotation.py` tự động hóa việc đọc Client Information, mapping, chống trùng khách hàng (độc lập theo từng sheet), phân loại Long-term/Short-term theo O/P/Q, và sinh Artifact Summary Quotation mới theo đúng các quy tắc trên. Xem chi tiết cách dùng trong `workflow.md`.
 
 ## Lịch sử thay đổi
+
+**2026-07-25:**
+
+- Đổi căn cứ phân loại Long-term/Short-term từ cột `LOẠI` sang cột O (Long-term) / P, Q (Short-term); `LOẠI` chỉ còn là fallback.
+- Sửa quy tắc "1 khách hàng = 1 dòng" thành "1 khách hàng = 1 dòng cho mỗi sheet cần thiết", cho phép sinh 2 dòng khi khách hàng dùng cả 2 loại dịch vụ.
+- Bổ sung quy tắc: chống trùng khách hàng thực hiện độc lập theo từng sheet.
 
 **2026-07-24:**
 

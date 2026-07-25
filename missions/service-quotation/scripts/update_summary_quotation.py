@@ -7,14 +7,40 @@ USAGE
 -----
     python3 update_summary_quotation.py <client_information.xlsx> <summary_quotation_template.xlsx>
 
-Reads every customer row from the Client Information file, skips any customer
-whose MA CONG TY already exists in the Summary Quotation template, and adds
-one new row per new customer into the correct sheet (DATA LONG - TERM or
-DATA SHORT - TERM, based on LOAI). Saves the result as a NEW file named
-SummaryQuotation_<yyyyMMdd_HHmm>.xlsx in /mnt/user-data/outputs -- the
-template itself is never modified.
+Reads every customer row from the Client Information file and adds one new
+row per customer into the correct sheet(s) of the Summary Quotation
+(DATA LONG - TERM and/or DATA SHORT - TERM). Saves the result as a NEW file
+named SummaryQuotation_<yyyyMMdd_HHmm>.xlsx -- the template itself is never
+modified.
 
-ASSUMPTIONS / DEFAULTS (documented so they can be reviewed each run)
+CLASSIFICATION LOGIC (updated 2026-07-25)
+------------------------------------------
+Long-term / Short-term is now decided from the actual VALUES in columns
+O / P / Q, not from the LOAI column (N). LOAI is only used as a fallback
+when O, P and Q are all blank. See mapping.md for the full rule table.
+
+    - O (Dich vu phan tich - thong ke) has a value      -> customer uses
+      LONG-TERM. The value itself (Standard/Premium/Platinum) is just the
+      package level, written into DATA LONG - TERM column D.
+    - P (Dich vu nhan su) or Q (Dich vu phap che doanh nghiep) has a value
+      -> customer uses SHORT-TERM. Package levels from P/Q are joined into
+      the DIEN GIAI text of DATA SHORT - TERM column G.
+    - O has a value AND (P or Q) has a value -> customer uses BOTH. Two
+      separate rows are added, one per sheet. The SHORT-TERM row's DIEN
+      GIAI only includes P/Q services, never O.
+    - O, P, Q all blank, but LOAI resolves to "Long-term" or "Short-term"
+      -> fallback: add one row to the corresponding sheet, with the
+      package/DIEN GIAI field left blank ("Chua duoc cung cap").
+    - O, P, Q all blank AND LOAI also blank/unrecognized -> customer is
+      skipped entirely and listed separately for manual review. Never
+      guessed.
+
+Duplicate-checking (by MA CONG TY) is done INDEPENDENTLY per sheet: a
+customer already present in DATA LONG - TERM but not yet in
+DATA SHORT - TERM will still get a new row added to DATA SHORT - TERM (and
+vice versa) if the classification calls for it.
+
+OTHER ASSUMPTIONS / DEFAULTS (documented so they can be reviewed each run)
 ----------------------------------------------------------------------
 - MA SO THUE (tax code) is written as a static value (from Client Info),
   not the original IMPORTRANGE formula, since IMPORTRANGE does not work in
@@ -35,8 +61,6 @@ ASSUMPTIONS / DEFAULTS (documented so they can be reviewed each run)
   side effect of the ORIGINAL formula, left untouched per convention.
 - Style (font/fill/border/number format) is copied from the last existing
   data row in each sheet, so new rows visually match the template.
-- Customers with LOAI blank/unrecognized are skipped and listed separately
-  for manual review -- never guessed.
 
 Run `python3 /mnt/skills/public/xlsx/scripts/recalc.py <output.xlsx>` after
 this script to compute formula values before delivering the file.
@@ -54,15 +78,14 @@ CLIENT_INFO_HEADER_ROW = 3
 CLIENT_INFO_DATA_START_ROW = 4
 COL_MA_CONG_TY = 2       # B
 COL_MA_SO_THUE = 5       # E
-COL_TEN_CONG_TY = 6      # F... actually F is "TÊN CÔNG TY" -> see note below
 COL_LOAI = 14             # N
-COL_SERVICE_1 = 15        # O - Dich vu phan tich - thong ke
-COL_SERVICE_2 = 16        # P - Dich vu nhan su
-COL_SERVICE_3 = 17        # Q - Dich vu phap che doanh nghiep
+COL_SERVICE_O = 15        # O - Dich vu phan tich - thong ke (Long-term)
+COL_SERVICE_P = 16        # P - Dich vu nhan su (Short-term)
+COL_SERVICE_Q = 17        # Q - Dich vu phap che doanh nghiep (Short-term)
 SERVICE_NAMES = {
-    COL_SERVICE_1: "Dịch vụ phân tích - thống kê",
-    COL_SERVICE_2: "Dịch vụ nhân sự",
-    COL_SERVICE_3: "Dịch vụ pháp chế doanh nghiệp",
+    COL_SERVICE_O: "Dịch vụ phân tích - thống kê",
+    COL_SERVICE_P: "Dịch vụ nhân sự",
+    COL_SERVICE_Q: "Dịch vụ pháp chế doanh nghiệp",
 }
 
 LT_SHEET = "DATA LONG - TERM"
@@ -93,19 +116,43 @@ def read_client_information(path):
             break
         mst = ws.cell(row=r, column=COL_MA_SO_THUE).value
         loai = ws.cell(row=r, column=COL_LOAI).value
-        levels = []
-        for col in (COL_SERVICE_1, COL_SERVICE_2, COL_SERVICE_3):
-            lvl = ws.cell(row=r, column=col).value
-            if lvl not in (None, ""):
-                levels.append((SERVICE_NAMES[col], str(lvl).strip()))
+
+        def cell_val(col):
+            v = ws.cell(row=r, column=col).value
+            return str(v).strip() if v not in (None, "") else None
+
+        o_level = cell_val(COL_SERVICE_O)
+        p_level = cell_val(COL_SERVICE_P)
+        q_level = cell_val(COL_SERVICE_Q)
+
         customers.append({
             "code": str(code).strip(),
             "mst": str(mst).strip() if mst not in (None, "") else "",
             "loai": str(loai).strip() if loai not in (None, "") else "",
-            "levels": levels,
+            "o_level": o_level,
+            "p_level": p_level,
+            "q_level": q_level,
         })
         r += 1
     return customers
+
+
+def classify(cust):
+    """Return (uses_long, uses_short, via_fallback) for a customer, per the
+    O/P/Q-based rules documented at the top of this file."""
+    has_o = cust["o_level"] is not None
+    has_short_service = cust["p_level"] is not None or cust["q_level"] is not None
+
+    if has_o or has_short_service:
+        return has_o, has_short_service, False
+
+    loai_lower = cust["loai"].lower()
+    if "long-term" in loai_lower:
+        return True, False, True
+    if "short-term" in loai_lower:
+        return False, True, True
+
+    return False, False, False  # unclassifiable
 
 
 def existing_codes(ws, code_col, start_row=4):
@@ -132,8 +179,8 @@ def next_seq(ws, col, start_row, last_row, width=3):
     return str(max_n + 1).zfill(width)
 
 
-def add_long_term_row(ws, r, cust):
-    level = cust["levels"][0][1] if cust["levels"] else ""
+def add_long_term_row(ws, r, cust, via_fallback):
+    level = cust["o_level"] if cust["o_level"] else ""
     seq = next_seq(ws, 7, 4, r - 1)
     ws.cell(row=r, column=1, value=f'=IF(B{r}="","",SUBTOTAL(3,$B$4:B{r}))')
     ws.cell(row=r, column=2, value=cust["code"])
@@ -151,8 +198,13 @@ def add_long_term_row(ws, r, cust):
     ws.cell(row=r, column=14, value=None)
 
 
-def add_short_term_row(ws, r, cust):
-    dien_giai = "\n".join(f"{name} - {lvl}" for name, lvl in cust["levels"]) or "Chưa được cung cấp"
+def add_short_term_row(ws, r, cust, via_fallback):
+    pairs = []
+    if cust["p_level"]:
+        pairs.append((SERVICE_NAMES[COL_SERVICE_P], cust["p_level"]))
+    if cust["q_level"]:
+        pairs.append((SERVICE_NAMES[COL_SERVICE_Q], cust["q_level"]))
+    dien_giai = "\n".join(f"{name} - {lvl}" for name, lvl in pairs) or "Chưa được cung cấp"
     no = next_seq(ws, 4, 4, r - 1)
     ws.cell(row=r, column=1, value=f'=IF(D{r}="","",SUBTOTAL(3,$D$4:D{r}))')
     ws.cell(row=r, column=2, value=cust["code"])
@@ -180,31 +232,45 @@ def main(client_info_path, template_path):
     lt_codes, lt_last = existing_codes(ws_lt, 2)
     st_codes, st_last = existing_codes(ws_st, 2)
 
-    added_lt, added_st, skipped_dup, skipped_unclassified = [], [], [], []
+    added_lt, added_st = [], []
+    skipped_dup_lt, skipped_dup_st = [], []
+    skipped_unclassified = []
+    both_sheets = []
+    fallback_used = []
 
     for cust in customers:
         code_upper = cust["code"].upper()
-        loai = cust["loai"]
-        if "long-term" in loai.lower():
-            if code_upper in lt_codes:
-                skipped_dup.append(cust["code"])
-                continue
-            lt_last += 1
-            copy_row_style(ws_lt, lt_last - 1, lt_last, 14)
-            add_long_term_row(ws_lt, lt_last, cust)
-            lt_codes.add(code_upper)
-            added_lt.append(cust["code"])
-        elif "short-term" in loai.lower():
-            if code_upper in st_codes:
-                skipped_dup.append(cust["code"])
-                continue
-            st_last += 1
-            copy_row_style(ws_st, st_last - 1, st_last, 14)
-            add_short_term_row(ws_st, st_last, cust)
-            st_codes.add(code_upper)
-            added_st.append(cust["code"])
-        else:
+        uses_long, uses_short, via_fallback = classify(cust)
+
+        if not uses_long and not uses_short:
             skipped_unclassified.append(cust["code"])
+            continue
+
+        if via_fallback:
+            fallback_used.append(cust["code"])
+
+        if uses_long:
+            if code_upper in lt_codes:
+                skipped_dup_lt.append(cust["code"])
+            else:
+                lt_last += 1
+                copy_row_style(ws_lt, lt_last - 1, lt_last, 14)
+                add_long_term_row(ws_lt, lt_last, cust, via_fallback)
+                lt_codes.add(code_upper)
+                added_lt.append(cust["code"])
+
+        if uses_short:
+            if code_upper in st_codes:
+                skipped_dup_st.append(cust["code"])
+            else:
+                st_last += 1
+                copy_row_style(ws_st, st_last - 1, st_last, 14)
+                add_short_term_row(ws_st, st_last, cust, via_fallback)
+                st_codes.add(code_upper)
+                added_st.append(cust["code"])
+
+        if uses_long and uses_short:
+            both_sheets.append(cust["code"])
 
     ts = datetime.now().strftime("%Y%m%d_%H%M")
     filename = f"SummaryQuotation_{ts}.xlsx"
@@ -232,8 +298,11 @@ def main(client_info_path, template_path):
         print(f"Copy for download: {delivery_path}")
     print(f"Added to {LT_SHEET}: {added_lt}")
     print(f"Added to {ST_SHEET}: {added_st}")
-    print(f"Skipped (already existed): {skipped_dup}")
-    print(f"Skipped (LOAI blank/unrecognized - needs manual review): {skipped_unclassified}")
+    print(f"Customers added to BOTH sheets: {both_sheets}")
+    print(f"Classified via LOAI fallback (O/P/Q all blank): {fallback_used}")
+    print(f"Skipped in {LT_SHEET} (already existed): {skipped_dup_lt}")
+    print(f"Skipped in {ST_SHEET} (already existed): {skipped_dup_st}")
+    print(f"Skipped entirely (unclassifiable - O/P/Q/LOAI all blank, needs manual review): {skipped_unclassified}")
     return mission_out_path
 
 
