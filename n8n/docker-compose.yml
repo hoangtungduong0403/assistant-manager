@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: ai-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ai_assistant
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: ai-n8n
+    restart: unless-stopped
+
+    ports:
+      - "5678:5678"
+
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+ 
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  n8n_data:
+
+
+  
