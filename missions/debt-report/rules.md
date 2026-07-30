@@ -1,10 +1,11 @@
 # Quy tắc làm việc
 
-Luôn lấy kỳ báo cáo từ ô E7/G7 của sheet `DEBT` tại thời điểm tải file — không tự đặt kỳ khác, không tự đoán kỳ nếu người dùng không nói rõ (mặc định dùng đúng kỳ đang thiết lập sẵn).
+**Từ 2026-07-30: nguồn dữ liệu là JSON do người dùng cung cấp, không còn dùng Google Drive.** Luôn lấy kỳ báo cáo do người dùng nêu rõ trong yêu cầu — nếu chưa nêu, phải hỏi lại trước khi phân tích, không tự đoán, không tái dùng kỳ của lần chạy trước.
 
-AI **không có quyền và không được tự ý sửa** ô E7/G7 hoặc bất kỳ ô nào khác trên Google Sheet gốc — Mission chỉ đọc dữ liệu. Nếu người dùng muốn đổi kỳ, hướng dẫn họ tự sửa trên Sheet rồi yêu cầu chạy lại.
 
-Luôn tự tính lại số liệu tổng hợp từ dữ liệu chi tiết bằng `analyze_debt.py`, không lấy trực tiếp các ô Tổng cộng có sẵn trên sheet, do đã ghi nhận lỗi công thức (xem `mapping.md`). Nếu phát hiện chênh lệch, phải nêu rõ trong báo cáo, không bỏ qua.
+Luôn tự tính lại số liệu tổng hợp từ dữ liệu chi tiết bằng `analyze_debt_json.py`, cộng tay từ toàn bộ dòng công ty trong JSON. Vì nguồn JSON không có dòng Tổng cộng gốc để đối chiếu, mục kiểm tra chéo số liệu phải ghi rõ "Chưa được cung cấp" (`reconciliation_available: false`) — không được tự suy diễn là "khớp" hay tự bịa số so sánh. Nếu về sau người dùng cung cấp thêm số liệu Tổng cộng gốc để đối chiếu, khôi phục logic phát hiện chênh lệch như quy trình cũ.
+
+Nếu JSON không có field tương đương cột "Khó đòi", mục nợ khó đòi phải ghi "Chưa được cung cấp" (`kho_doi_data_available: false`), không mặc định là 0.
 
 Không tự sửa công thức trên sheet gốc — Mission chỉ đọc và nêu khuyến nghị, việc sửa file gốc do người quản lý sheet quyết định.
 
@@ -21,13 +22,10 @@ Nếu dữ liệu nguồn thiếu hoặc không xác định được (vd không
 ## Quy ước đặt tên Artifact
 
 ```
-missions/debt-evaluation/output/BaoCaoDanhGiaCongNo_<tuKy>-<denKy>_<yyyyMMdd_HHmm>.docx
-```
-
-Trong đó `<tuKy>` và `<denKy>` lấy từ E7/G7, định dạng `ddMMyyyy`. Ví dụ:
+missions/debt-report/output/BaoCaoDanhGiaCongNo_<yyyyMMdd_HHmm>.docx
 
 ```
-missions/debt-evaluation/output/BaoCaoDanhGiaCongNo_01012026-31052026_20260725_1730.docx
+missions/debt-report/output/BaoCaoDanhGiaCongNo_20260725_1730.docx
 ```
 
 ## Quy tắc chuẩn hóa tên

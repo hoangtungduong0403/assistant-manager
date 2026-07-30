@@ -113,9 +113,11 @@ function metricCard(label, value, sub, { bg, valueColor, labelColor, subColor })
 }
 
 // ---- Số liệu động lấy từ analysis.json ----
-const majorDiscrepancy = A.discrepancies.find((d) => d.field === "trong_ky_thu");
-const kpiMissingText = majorDiscrepancy ? `${majorDiscrepancy.diff < 0 ? "" : "-"}${fmtTr(Math.abs(majorDiscrepancy.diff))}` : "Không lệch";
-const kpiMissingSub = majorDiscrepancy ? `${majorDiscrepancy.diff_pct}% do lỗi công thức trên sheet` : "số liệu khớp với sheet";
+const reconciliationAvailable = A.reconciliation_available !== false; // mặc định true cho analysis.json cũ (nguồn Google Sheet)
+const khoDoiDataAvailable = A.kho_doi_data_available !== false; // mặc định true cho analysis.json cũ
+const majorDiscrepancy = reconciliationAvailable ? A.discrepancies.find((d) => d.field === "trong_ky_thu") : null;
+const kpiMissingText = !reconciliationAvailable ? "Chưa được cung cấp" : (majorDiscrepancy ? `${majorDiscrepancy.diff < 0 ? "" : "-"}${fmtTr(Math.abs(majorDiscrepancy.diff))}` : "Không lệch");
+const kpiMissingSub = !reconciliationAvailable ? "không có số Tổng cộng gốc để đối chiếu" : (majorDiscrepancy ? `${majorDiscrepancy.diff_pct}% do lỗi công thức trên sheet` : "số liệu khớp với sheet");
 
 const metricCardRow = new Table({
   width: { size: USABLE_WIDTH, type: WidthType.DXA },
@@ -179,7 +181,10 @@ const children = [
   chartImage("reconciliation.png", 600, 267),
 ];
 
-if (A.discrepancies.length) {
+if (!reconciliationAvailable) {
+  children.push(h1("2. Kiểm tra chéo số liệu báo cáo"));
+  children.push(p("Chưa được cung cấp — nguồn dữ liệu kỳ này không có số liệu Tổng cộng gốc để đối chiếu với số tự tính lại từ dữ liệu chi tiết. Số liệu tổng hợp dưới đây là số tự cộng tay từ toàn bộ dòng công ty, chưa được đối chiếu chéo với nguồn khác."));
+} else if (A.discrepancies.length) {
   children.push(h1("2. Số liệu báo cáo đang hiển thị SAI - cần sửa trước khi dùng"));
   A.discrepancies.forEach((d) => {
     children.push(calloutBox(
@@ -215,10 +220,14 @@ if (A.concentrated_customers.length) {
 
 children.push(
   h1("4. Nợ khó đòi"),
-  p(`${A.kho_doi_flagged_count} khách hàng được gắn cờ "Khó đòi" / "Nợ khó đòi" trong kỳ.${A.kho_doi_stale_count ? ` ${A.kho_doi_stale_count} trong số đó đã có số dư = 0 (đã tất toán) - cờ chưa được gỡ, là lỗi vệ sinh dữ liệu.` : ""}`),
-  p(A.kho_doi_active.length
-    ? `${A.kho_doi_active.length} khách hàng thực sự còn nợ và bị đánh dấu khó đòi: ${A.kho_doi_active.map((r) => r.ma).join(", ")}, tổng ${fmt(A.kho_doi_active_sum)} (${fmtPct(round1(A.kho_doi_active_sum / A.totals.cuoi_ky_thu * 100))} tổng công nợ).`
-    : "Không có khách hàng nào vừa còn nợ vừa bị đánh dấu khó đòi trong kỳ này."),
+  ...(khoDoiDataAvailable ? [
+    p(`${A.kho_doi_flagged_count} khách hàng được gắn cờ "Khó đòi" / "Nợ khó đòi" trong kỳ.${A.kho_doi_stale_count ? ` ${A.kho_doi_stale_count} trong số đó đã có số dư = 0 (đã tất toán) - cờ chưa được gỡ, là lỗi vệ sinh dữ liệu.` : ""}`),
+    p(A.kho_doi_active.length
+      ? `${A.kho_doi_active.length} khách hàng thực sự còn nợ và bị đánh dấu khó đòi: ${A.kho_doi_active.map((r) => r.ma).join(", ")}, tổng ${fmt(A.kho_doi_active_sum)} (${fmtPct(round1(A.kho_doi_active_sum / A.totals.cuoi_ky_thu * 100))} tổng công nợ).`
+      : "Không có khách hàng nào vừa còn nợ vừa bị đánh dấu khó đòi trong kỳ này."),
+  ] : [
+    p("Chưa được cung cấp — nguồn dữ liệu kỳ này không có cột/field đánh dấu \"Khó đòi\", nên không thể xác định danh sách nợ khó đòi. Khuyến nghị bổ sung field này ở lần cung cấp dữ liệu tiếp theo nếu cần theo dõi."),
+  ]),
 
   h1("5. Mức độ đầy đủ dữ liệu để đánh giá tuổi nợ (aging)"),
   p(`Cột "Thời hạn thanh toán" hiện có dữ liệu ở ${fmtPct(A.han_coverage_pct)} số dòng.${A.han_coverage_pct < 80 ? " Mức độ này chưa đủ để phân loại nợ theo nhóm tuổi (0-30 / 31-60 / 61-90+ ngày) một cách đáng tin cậy - công cụ chuẩn để đánh giá chất lượng công nợ và ước tính dự phòng." : " Mức độ này đủ tốt để cân nhắc lập báo cáo tuổi nợ chi tiết."}`),
@@ -243,10 +252,12 @@ children.push(
   h1(`${A.flagged_notes.length ? "8" : "7"}. Kết luận và khuyến nghị hành động`),
   p("Thứ tự ưu tiên xử lý:"),
 );
-if (A.discrepancies.length) children.push(bullet("Sửa lỗi công thức trên sheet DEBT để có số liệu đúng ở dòng Tổng cộng."));
+if (reconciliationAvailable && A.discrepancies.length) children.push(bullet("Sửa lỗi công thức trên sheet DEBT để có số liệu đúng ở dòng Tổng cộng."));
+if (!reconciliationAvailable) children.push(bullet("Bổ sung số liệu Tổng cộng gốc ở lần cung cấp dữ liệu tiếp theo để có thể đối chiếu chéo, phát hiện sai lệch (nếu có)."));
 if (A.concentrated_customers.length) children.push(bullet(`Rà soát riêng ${concentratedNames} do mức tập trung rủi ro vượt ngưỡng an toàn.`));
 if (A.han_coverage_pct < 80) children.push(bullet("Bổ sung dữ liệu \"Thời hạn thanh toán\" đầy đủ để có thể lập báo cáo tuổi nợ chuẩn."));
-if (A.kho_doi_stale_count) children.push(bullet(`Dọn dẹp cờ "Khó đòi" đã hết hiệu lực (${A.kho_doi_stale_count} trường hợp).`));
+if (!khoDoiDataAvailable) children.push(bullet("Bổ sung field \"Khó đòi\" trong dữ liệu cung cấp để có thể theo dõi nợ khó đòi."));
+if (khoDoiDataAvailable && A.kho_doi_stale_count) children.push(bullet(`Dọn dẹp cờ "Khó đòi" đã hết hiệu lực (${A.kho_doi_stale_count} trường hợp).`));
 if (A.flagged_notes.length) children.push(bullet("Đối chiếu chứng từ gốc cho các dòng có ghi chú đặc biệt ở mục 7."));
 children.push(bullet("Đổi nhãn cột \"Phải trả\" thành \"Đã thu trong kỳ\" và ghi nhận đúng khoản mục kế toán cho số dư trả trước (deferred revenue)."));
 

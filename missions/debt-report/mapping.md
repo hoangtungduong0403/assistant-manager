@@ -1,6 +1,33 @@
 # Mapping dữ liệu và Layout báo cáo
 
-## Vị trí dữ liệu nguồn
+## Nguồn dữ liệu JSON (từ 2026-07-30, thay cho Google Drive)
+
+Người dùng cung cấp trực tiếp một mảng JSON, mỗi object là 1 dòng công ty. Mapping field JSON ↔ cột sheet gốc (dùng bởi `analyze_debt_json.py`):
+
+| Field JSON | Cột sheet gốc | Ý nghĩa |
+|---|---|---|
+| `STT` | A | STT |
+| `Mã công ty` | B | Mã công ty (khóa) |
+| `Mã số thuế` | C | Mã số thuế |
+| `Phải thu ĐẦU KỲ` | E | Đầu kỳ — Phải thu |
+| `Phải trả ĐẦU KỲ` | F | Đầu kỳ — Phải trả |
+| `Phải thu TRONG KỲ` | G | Trong kỳ — Phải thu |
+| `Phải trả TRONG KỲ` | H | Trong kỳ — Phải trả (thực chất tiền khách đã thanh toán, xem mục "Lưu ý bản chất kế toán") |
+| `Phải thu CUỐI kỳ` | I | Cuối kỳ — Phải thu (net dương) |
+| `Phải trả CUỐI kỳ` | J | Cuối kỳ — Phải trả (net âm, hiển thị dương) |
+| `Ghi chú` | K | Ghi chú |
+| — (không có trong JSON quan sát 2026-07-30) | L | Khó đòi — nếu JSON không có field này, đánh dấu `kho_doi_data_available: false`, không suy diễn bằng 0 |
+| `THỜI HẠN THANH TOÁN` | M | Thời hạn thanh toán |
+
+Giá trị `""` (chuỗi rỗng) cho các field số tiền được hiểu là 0 khi cộng tổng, giống cách xử lý ô trống trên sheet gốc.
+
+**Khác biệt quan trọng so với nguồn Google Sheet:**
+
+- JSON không có ô E7/G7 → kỳ báo cáo phải do người dùng cung cấp qua tham số dòng lệnh (xem `workflow.md` Bước 1, 3), script không tự đọc được.
+- JSON không có dòng Tổng cộng gốc (tương đương hàng 12) → không thể đối chiếu phát hiện lỗi công thức như quy trình cũ. `analysis.json` sẽ có `reconciliation_available: false` và mục 2 báo cáo ghi "Chưa được cung cấp" thay vì cảnh báo lệch hoặc xác nhận khớp.
+- Dòng rác cuối bảng (chữ ký, ngày lập, ô kẹt công thức lạc chỗ...) phải được lọc bỏ trước khi phân tích — nhận diện bằng "Mã công ty" rỗng/None hoặc không phải tên công ty hợp lệ.
+
+## Vị trí dữ liệu nguồn (quy trình Google Sheet cũ — không còn dùng mặc định)
 
 - File: "SGA_Revenue & Debt" (Google Sheet), File ID `18XReM8TVfivbddC1UAAKSJhhzVCSBhzeZdkY1qn5ZX4`.
 - Sheet: `DEBT` — "BÁO CÁO TỔNG HỢP CÔNG NỢ".

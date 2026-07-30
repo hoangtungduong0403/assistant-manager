@@ -2,16 +2,14 @@
 
 ## Mục tiêu
 
-Đóng vai trò chuyên gia tài chính, đọc dữ liệu công nợ trong sheet `DEBT` của file "SGA_Revenue & Debt" (Google Sheet) và tạo **báo cáo đánh giá công nợ** dạng Word — có letterhead công ty, metric card tóm tắt, cảnh báo rủi ro tập trung, bảng số liệu và biểu đồ — theo đúng layout đã được xác nhận với người dùng (2026-07-25).
-
-Kỳ báo cáo được xác định hoàn toàn bởi 2 ô **E7** (từ ngày) và **G7** (đến ngày) trên chính sheet `DEBT`. Đổi kỳ báo cáo cho lần chạy sau = đổi 2 ô này trên Google Sheet gốc rồi chạy lại Mission — **không cần sửa bất kỳ script hay tài liệu nào** trong Mission.
+Đóng vai trò chuyên gia tài chính, đọc dữ liệu công nợ (JSON do người dùng cung cấp, tương đương sheet `DEBT` của file "SGA_Revenue & Debt") và tạo **báo cáo đánh giá công nợ** dạng Word — có letterhead công ty, metric card tóm tắt, cảnh báo rủi ro tập trung, bảng số liệu và biểu đồ — theo đúng layout đã được xác nhận với người dùng
 
 Sau mỗi lần thực hiện, AI phải:
 
-- Đọc đúng kỳ báo cáo hiện hành từ E7/G7.
-- Tự tính lại toàn bộ số liệu tổng hợp từ dữ liệu chi tiết (không tin tưởng mù quáng các ô Tổng cộng có sẵn — sheet gốc có lỗi công thức đã biết, xem `mapping.md`).
-- Phát hiện và nêu rõ mọi chênh lệch giữa số hiển thị trên sheet và số tính đúng.
-- Phân tích rủi ro tập trung công nợ, nợ khó đòi, mức đầy đủ dữ liệu tuổi nợ, khoản trả trước.
+- Xác nhận đúng kỳ báo cáo do người dùng cung cấp.
+- Tự tính lại toàn bộ số liệu tổng hợp từ dữ liệu chi tiết trong JSON.
+- Nếu có số liệu Tổng cộng để đối chiếu thì nêu rõ chênh lệch; nếu nguồn JSON không có số liệu đối chiếu thì ghi "Chưa được cung cấp" cho mục kiểm tra chéo (xem `mapping.md`).
+- Phân tích rủi ro tập trung công nợ, nợ khó đòi (nếu có dữ liệu), mức đầy đủ dữ liệu tuổi nợ, khoản trả trước.
 - Sinh đủ 4 biểu đồ và báo cáo Word theo đúng layout đã chốt.
 - Lưu Artifact theo đúng quy ước đặt tên.
 
@@ -22,14 +20,17 @@ Sau mỗi lần thực hiện, AI phải:
 Ví dụ:
 
 - "Đánh giá công nợ giúp tôi."
-- "Tạo báo cáo công nợ theo kỳ mới." (sau khi người dùng đã tự đổi E7/G7 trên Sheet)
+- "Tạo báo cáo công nợ theo kỳ mới."
 - "Cập nhật lại báo cáo đánh giá công nợ."
 
 ## Input
 
-- File Google Sheet "SGA_Revenue & Debt" — File ID: `18XReM8TVfivbddC1UAAKSJhhzVCSBhzeZdkY1qn5ZX4` (xác nhận lại với người dùng nếu link thay đổi).
-- Sheet `DEBT`, ô E7 (từ ngày) / G7 (đến ngày) xác định kỳ báo cáo, dữ liệu chi tiết từ hàng 14.
-- Logo công ty: đã trích xuất sẵn và lưu tại `assets/sga_logo.png` (không cần trích xuất lại mỗi lần chạy, trừ khi công ty đổi logo).
+Nguồn dữ liệu bây giờ là JSON do người dùng cung cấp trực tiếp (dán trong chat hoặc file `.json`), đại diện cho các dòng dữ liệu công ty của sheet `DEBT` (tương đương hàng 14 trở đi). Xem mapping cột JSON ↔ cột sheet gốc tại `mapping.md`.
+
+  - Mục "2. Kiểm tra chéo số liệu" (so sánh số tự tính với số hiển thị sẵn trên sheet) **không thực hiện được** khi dùng nguồn JSON — báo cáo sẽ nêu rõ "Chưa được cung cấp" thay vì mục cảnh báo/kiểm tra chéo (xem `mapping.md`).
+  - Nếu JSON không có cột "Khó đòi" (cột L gốc), mục 4 cũng ghi rõ "Chưa được cung cấp" thay vì suy diễn bằng 0.
+- Logo công ty: đã trích xuất sẵn và lưu tại `sga_logo.png` trong thư mục Mission (không cần trích xuất lại mỗi lần chạy, trừ khi công ty đổi logo).
+
 
 ## Output
 
@@ -37,7 +38,8 @@ Ví dụ:
 
 ## Giới hạn quan trọng
 
-Mission này **không có quyền ghi/sửa trực tiếp vào Google Sheet gốc** (connector Google Drive hiện chỉ hỗ trợ đọc/tải file, không hỗ trợ chỉnh sửa cell). Vì vậy:
+Toàn bộ dữ liệu đầu vào do người dùng cung cấp trực tiếp dưới dạng JSON. Vì vậy:
 
-- Nếu người dùng muốn đổi kỳ báo cáo, họ cần **tự sửa ô E7/G7 trên Google Sheet** (hoặc AI hướng dẫn thao tác), sau đó mới yêu cầu AI chạy lại Mission.
-- AI không tự ý bịa kỳ báo cáo hoặc tự chạy với kỳ khác kỳ đang được thiết lập trên sheet.
+- AI không tự bịa hoặc suy diễn kỳ báo cáo — luôn hỏi lại người dùng nếu chưa nêu rõ.
+- AI không tự bịa số liệu đối chiếu (dòng Tổng cộng gốc) hay cột "Khó đòi" nếu JSON không cung cấp — ghi rõ "Chưa được cung cấp" theo đúng nguyên tắc ở `CLAUDE.md`.
+- Nếu người dùng muốn dùng lại quy trình Google Sheet cũ, cần nêu rõ yêu cầu — quy trình đó vẫn còn trong lịch sử `workflow.md` nhưng không phải mặc định nữa.
